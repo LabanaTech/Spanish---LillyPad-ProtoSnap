@@ -1,0 +1,150 @@
+/* ProtoSnap LilyPad Plataforma de Desarrollo Codigo Ejemplo 
+  Creador: Labana
+  fecha: 20 Enero 2014
+  license: Creative Commons Attribution-Share-alike v3.0 CC BY-SA 3.0
+  http://creativecommons.org/licenses/by-sa/3.0/
+  
+  Este es un codigo de ejemplo para la plataforma de desarrollo del LillyPad ProtoSnap
+  
+  En la secuencia de arranque "SETUP", se encienden todos los LEDS blancos y el Rojo, Verde, Azul
+  En el "loop":
+  * accionamos el zumbador al apretar el interruptor boton
+  * accionamos el vibrador con el interruptor deslizante
+  * Si ninguno de los dos interruptores estan encendidos, el codigo
+    controla los sensores de Luz y de Temperatura y enciende los LEDS blancos 
+    y RGB si los valores se encuentran por encima de los valores de referencia definidos.
+  * manteniendo los dedos sobre el sensor de Luz, podemos accionar los 5 leds blancos
+  * Soplando aire caliente al sensor de temperatura, alumbra el RED tricolor en ROJO
+  
+  Finalmente, el estado de cada entrada se transmite por el serial a 9600 bps.
+  Para conocer los valores de cada entrada, abrir el monitor serial (icono lupa esquina superior derecha)
+  Asegurarse que la tasa de transmision este seteada a 9600 bps
+
+*/
+
+/* Definicion de los Pines */
+// LEDs: LEDs blancos conectados a 5, 6, A2, A3, A4
+// RGBs: conectados a 9, 10, 11
+int ledPines[] = {5, 6, A2, A4, A3, 9, 10, 11};
+int interruptorPin = 2;
+int botonPin = A5;
+int vibracionPin = 3;
+int zumbidoPin = 7;
+int zumbidoNo= 12;
+int luzSensorPin = A6;
+int tempSensorPin = A1;
+
+/* Variables Globales */
+int luz = 100;
+
+void setup()
+{
+  // Esta accion se ejecuta cada vez que el Lillypad es energizado.
+  
+  //SECUENCIA DE LED ARRANQUE
+  for(int i=0; i<5; i++)  // este "for" loop corre 5 veces
+  {  // enciende los LEDs blancos (primeros 5 leds del Array ledPines)
+    pinMode(ledPines[i], OUTPUT);  // setea los pines como SALIDAS (OUTPUTS)
+    digitalWrite(ledPines[i], HIGH);  // Enciende el LED
+    delay(250);  // espera 1/4 de segundo
+    digitalWrite(ledPines[i], LOW); // apaga el LED
+  }
+  for(int i=5;i<8;i++)  // este "for" loop corre 3 veces
+  {   // enciende el led Tricolor (ultimos 3 pines del array ledPines)
+    pinMode(ledPines[i], OUTPUT);   // setea los pines como SALIDAS (OUTPUTS) 
+    digitalWrite(ledPines[i], LOW);  // Enciende el LED 3 tricolor RGB
+    delay(250);  // espera 1/4 de segundo
+    digitalWrite(ledPines[i], HIGH);  // apaga el LED
+    // Aclaracion: El estado HIGH apaga el LED RGB, y el estado LOW
+    // lo enciende. Es al reves que para los LEDs blancos.
+
+  }
+  ////////////////////////////////////////////
+
+  //INTERRUPTOR DESLIZANTE 
+  pinMode(interruptorPin, INPUT);  // Setea el Interruptor como una entrada
+  digitalWrite(interruptorPin, HIGH);  // acciona la resistencia de actuacion
+
+  //BOTON
+  pinMode(botonPin, INPUT);  // Setea el boton como una entrada
+  digitalWrite(botonPin, HIGH);  // acciona la resistencia de actuacion
+
+  //VIBRACION
+  pinMode(vibracionPin, OUTPUT);  // Setea el pin como una salida
+
+  //ZUMBADOR
+  pinMode(zumbidoPin, OUTPUT);  // Setea los dos pines de zumbido como Salidas
+  pinMode(zumbidoNo, OUTPUT);
+
+  Serial.begin(9600);  // Para mostrar valores en la consola terminal
+}
+
+void loop()
+{
+  //ZUMBADOR
+  if(digitalRead(botonPin) == 0)
+  {  // Si se aprieta el boton, acciona el zumbador
+    digitalWrite(zumbidoPin, HIGH);
+    digitalWrite(zumbidoNo, LOW);
+    delay(1);
+    digitalWrite(zumbidoPin, LOW);
+    digitalWrite(zumbidoNo, HIGH);
+  }
+  else  // Si el boton nos es presionado, verifica el estado
+  // del interruptor deslizante, y los sensores
+  {
+    if(digitalRead(interruptorPin) == 0)
+    {  // Si el interruptor deslizante esta encendido
+       // accionar el motor de vibracion
+      digitalWrite(vibracionPin, HIGH);
+      delay(100);
+      digitalWrite(vibracionPin, LOW); 
+    }
+    
+    // SENSOR LUZ
+    if(analogRead(luzSensorPin) < 20){
+      //Si esta oscuro, encender los LEDs blancos
+      for(int i=0;i<5;i++)
+      {
+        digitalWrite(ledPines[i], HIGH);
+      }
+    }
+    else{
+      // Si hay LUZ, apaga los LEDs blancos
+      for(int i=0;i<5;i++)
+      {
+        digitalWrite(ledPines[i], LOW);
+      }
+    }
+
+    ///SENSOR TEMPERATURA
+    if(analogRead(tempSensorPin) > 160)
+    {
+      // Soplando un poco de aire caliente sobre el sensor de temperatura, el sensor aumentara
+     // hasta por lo menos un valor de 170 
+      digitalWrite(ledPines[5], LOW); //Enciende el LED Rojo para indicar "Caliente" 
+    }
+    else{
+      digitalWrite(ledPines[5], HIGH);  // apagar el LED rojo
+    }
+    
+    // De aqui hacia abajo, vamos a imprimir en el terminal serial el
+    // estado de cada sensor, boton e interruptor
+    Serial.print("Interruptor=");
+    Serial.print(digitalRead(interruptorPin));
+
+    Serial.print("  Temperatura=");
+    Serial.print(analogRead(tempSensorPin));
+    
+    Serial.print("  Boton=");
+    Serial.print(digitalRead(botonPin));
+
+    Serial.print("  Luz=");
+    Serial.println(analogRead(luzSensorPin)); 
+  }
+}
+
+
+
+
+
